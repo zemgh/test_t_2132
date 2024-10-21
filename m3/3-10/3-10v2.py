@@ -3,33 +3,17 @@
 import asyncio, aiohttp
 import json
 import time
-from typing import Union
 
-from aiohttp import ClientError, ClientSession
-
-
-class UrlsQueue:
-    def __init__(self, urls: list[str]):
-        self.urls = urls
-        self.index = 0
-
-    def get_url(self) -> Union[str, None]:
-        try:
-            url = self.urls[self.index]
-            self.index += 1
-            return url
-        except IndexError:
-            return None
+from aiohttp import ClientError
 
 
 class Requests:
-    def __init__(self, urls: list[str], file_path: str, limit: int = 100):
-        self._urls = urls * 100
+    def __init__(self, urls: list[str], file_path: str, limit: int = 1000):
+        self._urls = iter(urls * 10000)
         self._file_path = file_path
         self._limit = limit
 
         self._responses = []
-
 
     async def _fetch(self, url: str, session: aiohttp.ClientSession) -> dict:
         try:
@@ -42,11 +26,21 @@ class Requests:
         finally:
             return {url: status}
 
+    async def _test_task(self, *args):
+        await asyncio.sleep(0.1)
+        return {'task': 'test'}
 
-    async def _worker(self, queue, func, session: aiohttp.ClientSession):
+
+    def _get_url(self):
+        try:
+            return next(self._urls)
+        except StopIteration:
+            return None
+
+    async def _worker(self, func, session: aiohttp.ClientSession):
         while True:
-            url = queue.get_url()
 
+            url = self._get_url()
             if not url:
                 break
 
@@ -61,11 +55,11 @@ class Requests:
 
     async def fetch_urls(self):
         async with aiohttp.ClientSession() as session:
-            queue = UrlsQueue(self._urls)
+            task = self._test_task
 
             workers = [
                 asyncio.create_task(
-                    self._worker(queue, self._fetch, session)
+                    self._worker(task, session)
                 )
                 for _ in range(self._limit)
             ]
@@ -87,6 +81,3 @@ if __name__ == '__main__':
     t = time.time()
     asyncio.run(client.fetch_urls())
     print(time.time() - t)
-
-
-

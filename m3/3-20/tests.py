@@ -35,8 +35,7 @@ def test_process_number(n: int) -> dict:
         process.process_number_mp_pool,
         process.process_number_mp_queue,
         process.process_number_thread_executor,
-        process.process_number_base
-    ]
+        process.process_number_base]
 
     return get_test_results(functions, n)
 
