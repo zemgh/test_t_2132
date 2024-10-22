@@ -8,8 +8,8 @@ from aiohttp import ClientError
 
 
 class Requests:
-    def __init__(self, urls: list[str], file_path: str, limit: int = 1000):
-        self._urls = iter(urls * 10000)
+    def __init__(self, urls: list[str], file_path: str, limit: int = 100):
+        self._urls = iter(urls * 100)
         self._file_path = file_path
         self._limit = limit
 
@@ -25,10 +25,6 @@ class Requests:
 
         finally:
             return {url: status}
-
-    async def _test_task(self, *args):
-        await asyncio.sleep(0.1)
-        return {'task': 'test'}
 
 
     def _get_url(self):
@@ -55,11 +51,9 @@ class Requests:
 
     async def fetch_urls(self):
         async with aiohttp.ClientSession() as session:
-            task = self._test_task
-
             workers = [
                 asyncio.create_task(
-                    self._worker(task, session)
+                    self._worker(self._fetch, session)
                 )
                 for _ in range(self._limit)
             ]
