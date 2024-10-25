@@ -32,7 +32,7 @@ class CatServer:
                         client_socket.sendall(data)
 
 
-    def _get_environ(self, request, connection):
+    def _get_environ(self, request, connection) -> dict:
         request_line = request.splitlines()[0]
         print(request_line)
         method, path, _ = request_line.split()
@@ -46,10 +46,10 @@ class CatServer:
         }
 
 
-    def _get_response_lines(self, status, headers):
+    def _get_response_lines(self, status: str, headers: list) -> bytes:
         status_line = f'HTTP/1.1 {status}\r\n'
 
         headers_list = [f'{key}: {value}\r\n' for key, value in headers]
         header_lines = ''.join(headers_list)
 
-        return (status_line + header_lines + "\r\n").encode('utf-8')
+        return (status_line + header_lines + '\r\n').encode('utf-8')

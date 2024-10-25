@@ -6,7 +6,7 @@ class BaseResponse:
 
 
 class JSONResponse(BaseResponse):
-    def __init__(self, data: dict, status_code: str):
+    def __init__(self, data: dict, status_code: int):
         self.status_code = status_code
         self.body = json.dumps(data).encode('utf-8')
         self.headers = [
@@ -16,7 +16,7 @@ class JSONResponse(BaseResponse):
 
 
 class ErrorResponse:
-    def __init__(self, status_code, detail=None):
+    def __init__(self, status_code: int, detail: str = None):
         self.status_code = status_code
         self.body = self.get_body(status_code, detail)
 

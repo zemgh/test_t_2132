@@ -1,31 +1,38 @@
+from aiohttp import ClientSession
+
 from src.exceptions import HttpException
 import requests
 
 
 class CurrencyService:
-    def get_rates(self, currency: str):
+    _REQUEST_URL = 'https://api.exchangerate-api.com/v4/latest/'
+
+    async def get_rates(self, currency: str):
         if len(currency) != 3:
             raise HttpException(
-                status_code='400 Bad Request',
+                status_code=400,
                 detail='Currency len must be 3 characters'
             )
 
-        url = 'https://api.exchangerate-api.com/v4/latest/' + currency
-        response = requests.get(url)
 
-        if response.status_code == 200:
-            data = response.json()
-            return data['rates']
+        async with ClientSession() as session:
 
-        if response.status_code == 404:
-            raise HttpException(
-                status_code='404 Not Found',
-                detail='Unsupported currency code'
-            )
+            url = self._REQUEST_URL + currency
+            async with session.get(url) as response:
 
-        raise HttpException(
-            status_code='503 Service Unavailable',
-            detail='Try again later'
-        )
+                if response.status == 200:
+                    data = await response.json()
+                    return data['rates']
+
+                if response.status == 404:
+                    raise HttpException(
+                        status_code=404,
+                        detail='Unsupported currency code'
+                    )
+
+                raise HttpException(
+                    status_code=503,
+                    detail='Try again later'
+                )
 
 

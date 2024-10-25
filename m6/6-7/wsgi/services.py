@@ -1,8 +1,11 @@
-from src.exceptions import HttpException
 import requests
+
+from src.exceptions import HttpException
 
 
 class CurrencyService:
+    _REQUEST_URL = 'https://api.exchangerate-api.com/v4/latest/'
+
     def get_rates(self, currency: str):
         if len(currency) != 3:
             raise HttpException(
@@ -10,7 +13,7 @@ class CurrencyService:
                 detail='Currency len must be 3 characters'
             )
 
-        url = 'https://api.exchangerate-api.com/v4/latest/' + currency
+        url = self._REQUEST_URL + currency
         response = requests.get(url)
 
         if response.status_code == 200:
@@ -27,5 +30,3 @@ class CurrencyService:
             status_code='503 Service Unavailable',
             detail='Try again later'
         )
-
-

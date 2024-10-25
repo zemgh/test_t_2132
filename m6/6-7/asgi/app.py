@@ -6,37 +6,45 @@ from src.exceptions import HttpException
 from src.responses import ErrorResponse, BaseResponse
 
 
-class WsgiApp:
+class AsgiApp:
     def __init__(self):
         self._routes: list[Route] = []
 
 
-    def __call__(self, environ, start_response):
+    async def __call__(self, scope, receive, send):
         try:
-            method = environ['REQUEST_METHOD']
-            path = environ['PATH_INFO']
-            response = self._get_response(method, path)
+            method = scope['method']
+            path = scope['path']
+            response = await self._get_response(method, path)
 
         except HttpException as e:
             response = ErrorResponse(status_code=e.status_code, detail=e.detail)
 
         except Exception:
-            response = ErrorResponse(status_code='500 INTERNAL SERVER ERROR')
+            response = ErrorResponse(status_code=500)
 
         finally:
-            start_response(response.status_code, response.headers)
-            return [response.body]
+            await send({
+                'type': 'http.response.start',
+                'status': response.status_code,
+                'headers': response.headers
+            })
+
+            await send({
+                'type': 'http.response.body',
+                'body': response.body
+            })
 
 
     def include_router(self, router):
         self._routes.extend(router.routes)
 
 
-    def _get_response(self, method: str, path: str) -> Union[BaseResponse, ErrorResponse]:
+    async def _get_response(self, method: str, path: str) -> Union[BaseResponse, ErrorResponse]:
         route = self._get_route(method, path)
         params = route.params
 
-        result = route.handler(**params)
+        result = await route.handler(**params)
 
         status_code = route.status_code
         response = route.response_cls(result, status_code)

@@ -6,8 +6,8 @@ from services import CurrencyService
 router = Router('')
 
 
-@router.get('/{currency}', response_cls=JSONResponse, status_code='200 OK')
-def get_currency(currency: str) -> dict:
+@router.get('/{currency}', response_cls=JSONResponse, status_code=200)
+async def get_currency(currency: str) -> dict:
     service = CurrencyService()
-    rates = service.get_rates(currency)
+    rates = await service.get_rates(currency)
     return rates

@@ -1,11 +1,12 @@
-from catserver.server import CatServer
+import asyncio
 
-from app import WsgiApp
+from acatsserver.server import ACatServer
+from app import AsgiApp
 from routes import router
 
-app = WsgiApp()
+app = AsgiApp()
 app.include_router(router)
 
 if __name__ == '__main__':
-    server = CatServer('127.0.0.1', 8000, app)
-    server.run()
+    server = ACatServer('127.0.0.1', 8000, app)
+    asyncio.run(server.run())

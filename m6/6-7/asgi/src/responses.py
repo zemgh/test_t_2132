@@ -6,24 +6,27 @@ class BaseResponse:
 
 
 class JSONResponse(BaseResponse):
-    def __init__(self, data: dict, status_code: str):
+    def __init__(self, data: dict, status_code: int):
         self.status_code = status_code
         self.body = json.dumps(data).encode('utf-8')
-        self.headers = [
+
+        headers = [
             ('Content-type', 'application/json'),
             ('Content-Length', str(len(self.body)))
         ]
+        self.headers = [(k.encode('utf-8'), v.encode('utf-8')) for k, v in headers]
 
 
 class ErrorResponse:
-    def __init__(self, status_code, detail=None):
+    def __init__(self, status_code: int, detail: str = None):
         self.status_code = status_code
         self.body = self.get_body(status_code, detail)
 
-        self.headers = [
+        headers = [
             ('Content-type', 'application/json'),
             ('Content-Length', str(len(self.body)))
         ]
+        self.headers = [(k.encode('utf-8'), v.encode('utf-8')) for k, v in headers]
 
 
     def get_body(self, status_code, detail) -> bytes:
