@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'authors',
     'books',
-    'api_v1'
+    'api'
 ]
 
 MIDDLEWARE = [
