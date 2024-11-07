@@ -100,6 +100,12 @@ def test_buy_book(api_client, book):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data['error'] == 'out of stock'
 
+    # Покупка Book при невалидном Book.id
+    url = BASE_URL + f'books/3/buy/'
+    response = api_client.post(url, data=data, format='json')
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 
 @pytest.mark.django_db
 def test_authors_list(api_client, author):
