@@ -27,15 +27,14 @@ class BookViewSet(mixins.CreateModelMixin,
     actions_serializers = {
         'list': BookSerializer,
         'create': CreateUpdateBookSerializer,
-        'update': CreateUpdateBookSerializer,
-        'buy': BuyBookSerializer
+        'update': CreateUpdateBookSerializer
     }
 
 
     def get_serializer_class(self):
         return self.actions_serializers[self.action]
 
-    @action(['POST'], detail=True)
+    @action(['POST'], detail=True, serializer_class=BuyBookSerializer)
     def buy(self, request, pk=None):
         book = self.get_object()
 
@@ -60,5 +59,5 @@ class AuthorViewSet(mixins.CreateModelMixin,
                     ):
 
     http_method_names = ['get', 'post', 'put']
-    queryset = Author.objects.all()
+    queryset = Author.objects.prefetch_related('books')
     serializer_class = AuthorBooksSerializer
