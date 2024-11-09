@@ -26,7 +26,7 @@ class TaskModel(sqlalchemy_base_model):
     pass
 
 
-class BaseTaskResult(PydanticBaseModel):
+class TaskResult(PydanticBaseModel):
     worker_id: int
     task_id: int
     status: str
@@ -34,18 +34,13 @@ class BaseTaskResult(PydanticBaseModel):
     result: Any
 
 
-class TaskResult(BaseTaskResult):
-    pass
-
-
 class BaseWorker:
     TASK = TypeVar('TASK', bound=BaseTaskModel)
-    RESULT = TypeVar('RESULT', bound=BaseTaskResult)
 
     def __init__(self,
                  worker_id: int,
                  db,
-                 results: list[TASK],
+                 results: list[TaskResult],
                  tasks_model: TASK,
                  tasks_result_model: TASK):
 
@@ -63,7 +58,7 @@ class BaseWorker:
         while True:
             task = await self._fetch_task()
             if task:
-                result = await self._process_task(task)
+                result = await self.process_task(task)
                 self._results.append(result)
                 # log result
 
@@ -83,23 +78,6 @@ class BaseWorker:
                 task.worker_id = self.worker_id
                 return task
 
-    async def _complete_task(self, task: TASK, result) -> TASK:
-        task.status = self._task_model.TaskStatus.COMPLETED
-        await self._db.commit()
-        return self._pack_to_pydantic_model(task, result)
-
-    async def _process_task(self, task: TASK) -> RESULT:
-        raise NotImplemented
-
-    def _pack_to_pydantic_model(self, task: TASK, result) -> RESULT:
-        raise NotImplemented
-
-
-class RandomWorker(BaseWorker):
-    async def _process_task(self, task: TaskModel) -> TaskResult:
-        result = 'do something with TaskModel.task_name'
-        return await self._complete_task(task, result)
-
     def _pack_to_pydantic_model(self, task: TaskModel, result) -> TaskResult:
         result = {
             'worker_id': task.worker_id,
@@ -110,6 +88,20 @@ class RandomWorker(BaseWorker):
         }
 
         return TaskResult(**result)
+
+    async def complete_task(self, task: TASK, result) -> TaskResult:
+        task.status = self._task_model.TaskStatus.COMPLETED
+        await self._db.commit()
+        return self._pack_to_pydantic_model(task, result)
+
+    async def process_task(self, task: TASK) -> TaskResult:
+        raise NotImplemented
+
+
+class RandomWorker(BaseWorker):
+    async def process_task(self, task: TaskModel) -> TaskResult:
+        result = 'do something with TaskModel.task_name'
+        return await self.complete_task(task, result)
 
 
 
