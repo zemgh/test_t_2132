@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, TypeVar
 
 from pydantic import BaseModel as PydanticBaseModel
 from sqlalchemy import String, Enum, Integer, DateTime, func, Select, null
@@ -9,9 +9,7 @@ from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 sqlalchemy_base_model = declarative_base()
 
 
-class TaskModel(sqlalchemy_base_model):
-    __tablename__ = 'tasks'
-
+class BaseTaskModel(sqlalchemy_base_model):
     class TaskStatus(enum.Enum):
         PENDING = 'pending'
         PROCESSING = 'processing'
@@ -24,7 +22,11 @@ class TaskModel(sqlalchemy_base_model):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
 
-class TaskResult(PydanticBaseModel):
+class TaskModel(sqlalchemy_base_model):
+    pass
+
+
+class BaseTaskResult(PydanticBaseModel):
     worker_id: int
     task_id: int
     status: str
@@ -32,11 +34,26 @@ class TaskResult(PydanticBaseModel):
     result: Any
 
 
-class RandomWorker:
-    def __init__(self, worker_id: int, db, results: list[TaskResult]):
+class TaskResult(BaseTaskResult):
+    pass
+
+
+class BaseWorker:
+    TASK = TypeVar('TASK', bound=BaseTaskModel)
+    RESULT = TypeVar('RESULT', bound=BaseTaskResult)
+
+    def __init__(self,
+                 worker_id: int,
+                 db,
+                 results: list[TASK],
+                 tasks_model: TASK,
+                 tasks_result_model: TASK):
+
         self._worker_id = worker_id
         self._db = db
         self._results = results
+        self._task_model = tasks_model
+        self._result_model = tasks_result_model
 
     @property
     def worker_id(self):
@@ -50,11 +67,11 @@ class RandomWorker:
                 self._results.append(result)
                 # log result
 
-    async def _fetch_task(self) -> Optional[TaskModel]:
+    async def _fetch_task(self) -> Optional[TASK]:
         async with self._db.begin():
             query = (
-                Select(TaskModel)
-                .where(TaskModel.status == TaskModel.TaskStatus.PENDING)
+                Select(self._task_model)
+                .where(self._task_model.status == self._task_model.TaskStatus.PENDING)
                 .limit[1]
                 .with_for_update(skip_locked=True)
             )
@@ -62,22 +79,32 @@ class RandomWorker:
             task = await self._db.execute(query).scalars().first()
 
             if task:
-                task.status = TaskModel.TaskStatus.PROCESSING
+                task.status = self._task_model.TaskStatus.PROCESSING
                 task.worker_id = self.worker_id
                 return task
 
+    async def _complete_task(self, task: TASK, result) -> TASK:
+        task.status = self._task_model.TaskStatus.COMPLETED
+        await self._db.commit()
+        return self._pack_to_pydantic_model(task, result)
+
+    async def _process_task(self, task: TASK) -> RESULT:
+        raise NotImplemented
+
+    def _pack_to_pydantic_model(self, task: TASK, result) -> RESULT:
+        raise NotImplemented
+
+
+class RandomWorker(BaseWorker):
     async def _process_task(self, task: TaskModel) -> TaskResult:
         result = 'do something with TaskModel.task_name'
         return await self._complete_task(task, result)
 
-    async def _complete_task(self, task: TaskModel, result) -> TaskResult:
-        task.status = TaskModel.TaskStatus.COMPLETED
-        await self._db.commit()
-
+    def _pack_to_pydantic_model(self, task: TaskModel, result) -> TaskResult:
         result = {
             'worker_id': task.worker_id,
             'task_id': task.id,
-            'status': TaskModel.TaskStatus.COMPLETED,
+            'status': task.status,
             'completed_at': task.updated_at,
             'result': result
         }
