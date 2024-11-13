@@ -2,7 +2,7 @@ from functools import wraps
 
 import redis
 
-redis_client = redis.StrictRedis(host='localhost', port=6379)
+redis_client = redis.Redis()
 
 
 def single(max_processing_time=120):
