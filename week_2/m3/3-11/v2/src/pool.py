@@ -21,7 +21,6 @@ class WorkersPool:
 
         self._queue = queue
         self._queue_monitor = queue_monitor
-        self._monitor_task: Optional[asyncio.Task] = None
 
         self._running: bool = False
 
@@ -34,7 +33,7 @@ class WorkersPool:
             self._workers_tasks.append(asyncio.create_task(worker.run()))
 
         if self._queue_monitor:
-            self._monitor_task = asyncio.create_task(self._queue_monitor.run())
+            asyncio.create_task(self._queue_monitor.run())
 
 
     async def stop(self):
@@ -48,17 +47,11 @@ class WorkersPool:
             except asyncio.CancelledError:
                 pass
 
-        if self._monitor_task:
-            self._monitor_task.cancel()
-
-            try:
-                await self._monitor_task
-            except asyncio.CancelledError:
-                pass
+        if self._queue_monitor:
+            await self._queue_monitor.stop()
 
     async def run_forever(self):
         await self.start()
-
         try:
             while self._running:
                 await asyncio.sleep(1)

@@ -8,7 +8,7 @@ from src.task import Task
 
 
 class RedisListQueue:
-    def __init__(self, redis_cli: Redis, queue_name: str, timeout: int = 60):
+    def __init__(self, redis_cli: Redis, queue_name: str, timeout: int = 15):
         self._redis_cli = redis_cli
         self._queue_name = queue_name
         self._processing_queue = f'{self._queue_name}:processing'

@@ -7,7 +7,7 @@ class Task:
         self._done_func = done_func
 
     @property
-    def message(self):
+    def message(self) -> dict:
         return self._message
 
     async def done(self):
