@@ -1,0 +1,22 @@
+infrastructure:
+
+  db:
+    url: postgresql+asyncpg://orders_user:orders_password@127.0.0.1:5432/orders_db
+
+  kafka:
+    producer:
+      config:
+        bootstrap_servers: 127.0.0.1:9092, 127.0.0.1:9093
+#        retries: 100500
+        acks: all
+#        delivery_timeout_ms: 1000
+        linger_ms: 0
+        enable_idempotence: false
+#        partitioner: consistent_random
+
+    consumer:
+      config:
+        bootstrap_servers: 127.0.0.1:9092, 127.0.0.1:9093
+        group_id: 1
+        enable_auto_commit: False
+        auto_offset_reset: earliest

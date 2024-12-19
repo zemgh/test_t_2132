@@ -1,4 +1,4 @@
-from rest_framework import status, mixins, filters
+from rest_framework import status, mixins, filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -51,6 +51,7 @@ class BookViewSet(mixins.CreateModelMixin,
             status=status.HTTP_400_BAD_REQUEST
         )
 
+class a(viewsets.ModelViewSet):
 
 class AuthorViewSet(mixins.CreateModelMixin,
                     mixins.UpdateModelMixin,
